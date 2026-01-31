@@ -52,6 +52,8 @@ pip install -e .
 This stage trains a fundamental locomotion policy, which will later used in the residual learning phase.
 ```bash
 python legged_gym/scripts/train.py --task g1_16dof_loco --headless
+python legged_gym/scripts/train.py --task ym1_16dof_loco --headless --num_envs 4000 --resume --load_run Jan30_17-09-31_
+
 ```
 * Train for 30k–50k iterations (recommended: ≥40k).
 * Use at least 3000 environments for stable learning.
@@ -71,15 +73,47 @@ python legged_gym/scripts/train.py --task g1_16dof_resi_moe --headless
 * Train for 40k iterations in total. (First 30k iterations: train the residual network. Last 10k iterations: enable body mask for deployment adaptation.）
 * Use at least 6000 environments for optimal results.
 
+
 The second training stage supports distributed multi-GPU training for faster convergence.
 ```bash
+
+1、收集数据  
+
+python /home/ps/lpl/MoRE/body_mask_data/collect_body_mask.py     --task ym1_16dof_loco    --load_run Jan22_16-01-19_  --headless
+
+python /home/ps/lpl/MoRE/body_mask_data/visualize_body_mask.py --data_path /home/ps/lpl/MoRE/body_mask_data/body_masks_ym1_16dof_loco_20260128_193552.npz  
+
+
+2、修复已收集的数据（如果数据已存在但有问题）：  python adjust_body_threshold.py 25
+3、验证结果：验证结果：
+python check_ym1_body_mask.py
+python visualize_ym1_body_mask.py
+
 torchrun --nproc_per_node=2 legged_gym/scripts/train.py --task=g1_16dof_resi_moe --headless
+
+
 ```
 
 3️⃣ **Visualize**: \
 After training, you can visualize the learned policy using the following command:
 ```bash
 python legged_gym/scripts/play.py --task g1_16dof_loco/g1_16dof_resi_moe --load_run ${policy_path}
+
+python legged_gym/scripts/play.py --task g1_16dof_loco --load_run /home/ps/lpl/MoRE/logs/g1_16dof_loco/Dec30_15-03-07_
+
+python legged_gym/scripts/play.py --task ym1_16dof_loco --load_run /home/ps/lpl/MoRE/logs/ym1_16dof_loco/Jan22_16-01-19_/ --checkpoint 34400
+
+
+python deploy/deploy_mujoco/deploy_mujoco_with_loco.py g1_16dof_loco.yaml
+
+python deploy/deploy_mujoco/deploy_mujoco_with_resi.py g1_16dof_resi_moe.yaml
+
+python deploy/deploy_mujoco/deploy_mujoco_ym1.py ym1_16dof.yaml
+
+python deploy/deploy_mujoco/deploy_mujoco_with_loco_onnx.py ym1_16dof.yaml
+
+
+
 ```
  🕹️ Viewer Controls \
 You can manually control the robot behaviors during visualization.
@@ -91,52 +125,3 @@ You can manually control the robot behaviors during visualization.
 | `[ , ]` | Switch between robots |
 | `Space` | Pause / Unpause simulation |
 
-4️⃣ **Validate in Mujoco**: \
-We provide four types of terrain environments for Mujoco validation: 
-
-<table>
-  <tr>
-    <th>Roughness</th>
-    <th>Pit</th>
-    <th>Stairs</th>
-    <th>Gap</th>
-  </tr>
-  <tr>
-    <td><img src="./docs/roughness.png" width="150"/></td>
-    <td><img src="./docs/pit.png" width="150"/></td>
-    <td><img src="./docs/stairs.png" width="150"/></td>
-    <td><img src="./docs/gap.png" width="150"/></td>
-  </tr>
-</table>
-
-
-The specific terrain to evaluate can be selected by configuring the YAML file (`g1_16dof_resi_moe.yaml`).
-
-Run the following command for Mujoco validation:
-```bash
-python deploy/deploy_mujoco/deploy_mujoco_with_resi.py g1_16dof_resi_moe.yaml
-```
-
-
-
-## 📄 License
-
-This codebase is under [CC BY-NC 4.0 license](https://creativecommons.org/licenses/by-nc/4.0/deed.en). You may not use the material for commercial purposes, e.g., to make demos to advertise your commercial products.
-
-## Acknowledgements
-We thank [@lsx162534](https://github.com/lsx162534) and [@ChenN-Scott](https://github.com/ChenN-Scott) for their help with the code implementation.
-
-## 📝 Citation
-
-If you find our work useful, please consider citing:
-```
-@misc{wang2025moremixtureresidualexperts,
-      title={MoRE: Mixture of Residual Experts for Humanoid Lifelike Gaits Learning on Complex Terrains}, 
-      author={Dewei Wang and Xinmiao Wang and Xinzhe Liu and Jiyuan Shi and Yingnan Zhao and Chenjia Bai and Xuelong Li},
-      year={2025},
-      eprint={2506.08840},
-      archivePrefix={arXiv},
-      primaryClass={cs.RO},
-      url={https://arxiv.org/abs/2506.08840}, 
-}
-```

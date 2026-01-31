@@ -1,0 +1,61 @@
+# G1 16DOF Loco Sim2Sim Configuration
+# 对应 g1_16dof_loco_config.py (num_obs=57, 无 gait_cmd)
+
+policy_path: "/home/ps/lpl/MoRE/logs/ym1_16dof_loco/Jan09_17-31-25_/exported/policy_depth_1.onnx" 
+xml_path: "./resources/robots/g1/stairs.xml"
+
+# Depth Camera
+depth_far_clip: 2
+depth_near_clip: 0
+depth_buffer_len: 3  # buffer_len = 2 + 1
+depth_size: [64, 64]
+cam_update_interval: 5
+
+# Camera randomization (与训练时保持一致)
+crop_image: False
+crop_size: [10, 20, 10, 5]  # left, top, right, bottom
+
+gaussian_filter: False
+gaussian_filter_kernel: 5
+gaussian_filter_sigma: 1.2
+
+gaussian_noise: False
+gaussian_noise_std: 0.05
+
+depth_dis_noise: 0
+
+# Total simulation time
+simulation_duration: 60.0
+# Simulation time step
+simulation_dt: 0.002
+# Controller update frequency (simulation_dt * control_decimation = 0.008; 125Hz)
+control_decimation: 4
+
+# PD gains from g1_16dof_loco_config.py
+kps: [100, 100, 100, 150, 40, 40, 100, 100, 100, 150, 40, 40, 60, 40, 60, 40]
+kds: [2, 2, 2, 4, 2, 2, 2, 2, 2, 4, 2, 2, 2, 1, 2, 1]
+
+# Default joint angles from g1_16dof_loco_config.py
+default_angles: [-0.1, 0.0, 0.0, 0.3, -0.2, 0.0, 
+                 -0.1, 0.0, 0.0, 0.3, -0.2, 0.0,
+                 0.3, 0.8, 0.3, 0.8]
+
+# Initial qpos: [quat(4), joints(16)]
+init_qpos: [1, 0, 0, 0,
+            -0.1, 0.0, 0.0, 0.3, -0.2, 0.0,
+            -0.1, 0.0, 0.0, 0.3, -0.2, 0.0,
+            0.3, 0.8, 0.3, 0.8]
+
+# Observation scales
+ang_vel_scale: 0.25
+dof_pos_scale: 1.0
+dof_vel_scale: 0.05
+action_scale: 0.25
+cmd_scale: [2.0, 2.0, 0.25]
+
+num_actions: 16
+num_obs: 57  # 无 gait_cmd: cmd(3) + ang_vel(3) + gravity(3) + dof_pos(16) + dof_vel(16) + actions(16)
+obs_history_len: 10
+
+# Command: [vx, vy, vyaw]
+cmd_init: [0.1, 0, 0]
